@@ -21,6 +21,25 @@ router.post(
     controller.send
 )
 
+router.post(
+    '/send-image',
+    query('id').notEmpty(),
+    body('receiver').notEmpty(),
+    body('caption').notEmpty(),
+    body('url').notEmpty(),
+    requestValidator,
+    sessionValidator,
+    controller.sendImage
+)
+
+router.post(
+    '/send-buttons',
+    query('id').notEmpty(),
+    body('receiver').notEmpty(),
+    requestValidator,
+    sessionValidator,
+    controller.sendButtons
+)
 router.post('/send-bulk', query('id').notEmpty(), requestValidator, sessionValidator, controller.sendBulk)
 
 export default router
