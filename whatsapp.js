@@ -1,3 +1,5 @@
+import fetch from 'node-fetch'
+import 'dotenv/config'
 import { existsSync, unlinkSync, readdir } from 'fs'
 import { join } from 'path'
 import pino from 'pino'
@@ -16,9 +18,10 @@ import response from './response.js'
 
 const sessions = new Map()
 const retries = new Map()
-
+const dirname = process.env.SESSIONS_DIR ?? __dirname
+const webhook = process.env.WEBHOOK_URL ?? null
 const sessionsDir = (sessionId = '') => {
-    return join(__dirname, 'sessions', sessionId ? `${sessionId}.json` : '')
+    return join(dirname, 'sessions', sessionId ? `${sessionId}.json` : '')
 }
 
 const isSessionExists = (sessionId) => {
@@ -90,11 +93,19 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     // Automatically read incoming messages, uncomment below codes to enable this behaviour
     wa.ev.on('messages.upsert', async (m) => {
         const message = m.messages[0]
-        console.log(`Received message ${JSON.stringify(message, undefined, 2)} recipient ${message.key.recipient} sessionId ${sessionId}`)
-        // if (!message.key.fromMe && m.type === 'notify') {
+        console.log(`Received message ${JSON.stringify(message, undefined, 2)} sessionId ${sessionId}`)
+        if (!message.key.fromMe && m.type === 'notify') {
         //     await delay(1000)
-        //
-        // }
+          if(webhook){
+              fetch(webhook, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ "session": sessionId, "message": message})
+              }).catch(() => {})
+          }
+        }
     })
 
     wa.ev.on('connection.update', async (update) => {
