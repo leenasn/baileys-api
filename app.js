@@ -1,6 +1,5 @@
 import 'dotenv/config'
 import express from 'express'
-import basicAuth  from 'express-basic-auth'
 import nodeCleanup from 'node-cleanup'
 import routes from './routes.js'
 import { init, cleanup } from './whatsapp.js'
@@ -9,21 +8,6 @@ import __dirname from './dirname.js'
 const app = express()
 const host = process.env.HOST ?? '127.0.0.1'
 const port = parseInt(process.env.PORT ?? 8000)
-
-app.use(
-  basicAuth({
-    authorizer: customAuthorizer,
-    challenge: true,
-    realm: 'PN-WhatsApp',
-    unauthorizedResponse: "Invalid credentials"
-  })
-)
-
-function customAuthorizer(username, password) {
-  const userMatches = basicAuth.safeCompare(username, process.env.USERNAME)
-  const passwordMatches = basicAuth.safeCompare(password, process.env.PASSWORD)
-  return userMatches & passwordMatches
-}
 
 app.get('/check',function(req,res) {
   res.sendFile(`${__dirname}/index.html`);
