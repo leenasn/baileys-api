@@ -4,6 +4,7 @@ import basicAuth  from 'express-basic-auth'
 import nodeCleanup from 'node-cleanup'
 import routes from './routes.js'
 import { init, cleanup } from './whatsapp.js'
+import __dirname from './dirname.js'
 
 const app = express()
 const host = process.env.HOST ?? '127.0.0.1'
@@ -15,7 +16,8 @@ app.use(
     challenge: true,
     realm: 'PN-WhatsApp',
     unauthorizedResponse: "Invalid credentials"
-}))
+  })
+)
 
 function customAuthorizer(username, password) {
   const userMatches = basicAuth.safeCompare(username, process.env.USERNAME)
@@ -23,6 +25,9 @@ function customAuthorizer(username, password) {
   return userMatches & passwordMatches
 }
 
+app.get('/check',function(req,res) {
+  res.sendFile(`${__dirname}/index.html`);
+});
 
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
