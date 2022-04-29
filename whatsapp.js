@@ -19,7 +19,8 @@ import response from './response.js'
 const sessions = new Map()
 const retries = new Map()
 const dirname = process.env.SESSIONS_DIR ?? __dirname
-const webhook = process.env.WEBHOOK_URL ?? null
+const messageWebhook = process.env.MESSAGE_WEBHOOK_URL ?? null
+const connectionWebhook = process.env.CONNECTION_WEBHOOK_URL ?? null
 const sessionsDir = (sessionId = '') => {
     return join(dirname, 'sessions', sessionId ? `${sessionId}.json` : '')
 }
@@ -96,8 +97,8 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
         console.log(`Received message ${JSON.stringify(message, undefined, 2)} sessionId ${sessionId}`)
         if (!message.key.fromMe && m.type === 'notify') {
         //     await delay(1000)
-          if(webhook){
-              fetch(webhook, {
+          if(messageWebhook){
+              fetch(messageWebhook, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
@@ -109,11 +110,24 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     })
 
     wa.ev.on('connection.update', async (update) => {
+      console.log('connection update', update)
         const { connection, lastDisconnect } = update
         const statusCode = lastDisconnect?.error?.output?.statusCode
 
         if (connection === 'open') {
             retries.delete(sessionId)
+            console.log("opening...")
+            if(connectionWebhook){
+                fetch(connectionWebhook, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ "session": sessionId, "message": "connecting"})
+                }).catch(() => {
+                  console.log("Error while calling connectionWebhook")
+                })
+            }
         }
 
         if (connection === 'close') {
@@ -121,7 +135,15 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 if (res && !res.headersSent) {
                     response(res, 500, false, 'Unable to create session.')
                 }
-
+                else if(connectionWebhook){
+                    fetch(connectionWebhook, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({ "session": sessionId, "message": "closed"})
+                    }).catch(() => {})
+                }
                 return deleteSession(sessionId, isLegacy)
             }
 
@@ -132,7 +154,9 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
             )
         }
-
+        if (connection === 'connecting'){
+          console.log("connecting...")
+        }
         if (update.qr) {
             if (res && !res.headersSent) {
                 try {
