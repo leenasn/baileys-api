@@ -94,10 +94,8 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     // Automatically read incoming messages, uncomment below codes to enable this behaviour
     wa.ev.on('messages.upsert', async (m) => {
         const message = m.messages[0]
-        console.log(`Received message ${JSON.stringify(message, undefined, 2)} sessionId ${sessionId} remoteJID ${message.key.remoteJid.endsWith("@s.whatsapp.net")} `)
+        // console.log(`Received message ${JSON.stringify(message, undefined, 2)} sessionId ${sessionId} remoteJID ${message.key.remoteJid.endsWith("@s.whatsapp.net")} `)
         if (!message.key.fromMe && m.type === 'notify' && message.key.remoteJid.endsWith("@s.whatsapp.net")) {
-        // if (m.type === 'notify' && message.key.remoteJid.endsWith("@s.whatsapp.net")) {
-        //     await delay(1000)
           if(messageWebhook){
               fetch(messageWebhook, {
                 method: 'POST',
@@ -105,7 +103,9 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ "session": sessionId, "message": message})
-              }).catch(() => {})
+              }).catch(() => {
+                console.log("Error while sending Webhook for incoming message")
+              })
           }
         }
     })
@@ -114,36 +114,16 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
       console.log('connection update', update)
         const { connection, lastDisconnect } = update
         const statusCode = lastDisconnect?.error?.output?.statusCode
+        fireWebhook(sessionId, connection)
 
         if (connection === 'open') {
             retries.delete(sessionId)
-            console.log("opening...")
-            if(connectionWebhook){
-                fetch(connectionWebhook, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ "session": sessionId, "message": "connecting"})
-                }).catch(() => {
-                  console.log("Error while calling connectionWebhook")
-                })
-            }
         }
 
         if (connection === 'close') {
             if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId)) {
                 if (res && !res.headersSent) {
                     response(res, 500, false, 'Unable to create session.')
-                }
-                else if(connectionWebhook){
-                    fetch(connectionWebhook, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({ "session": sessionId, "message": "closed"})
-                    }).catch(() => {})
                 }
                 return deleteSession(sessionId, isLegacy)
             }
@@ -154,9 +134,6 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 },
                 statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
             )
-        }
-        if (connection === 'connecting'){
-          console.log("connecting...")
         }
         if (update.qr) {
             if (res && !res.headersSent) {
@@ -204,6 +181,19 @@ const deleteSession = (sessionId, isLegacy = false) => {
     retries.delete(sessionId)
 }
 
+const fireWebhook = (sessionId, connectionStatus) =>{
+  if(connectionWebhook && connectionStatus){
+      fetch(connectionWebhook, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ "session": sessionId, "message": connectionStatus})
+      }).catch(() => {
+        console.log("Error while calling connectionWebhook")
+      })
+  }
+}
 const getChatList = (sessionId, isGroup = false) => {
     const filter = isGroup ? '@g.us' : '@s.whatsapp.net'
 
