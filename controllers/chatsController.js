@@ -42,7 +42,6 @@ const sendImage = async (req, res) => {
   	      url: url,
   	     }
       }
-      console.log(imageMessage)
       await sendMessage(session, receiver, imageMessage)
 
       response(res, 200, true, 'The message has been successfully sent.')
@@ -54,6 +53,7 @@ const sendImage = async (req, res) => {
 const sendButtons = async (req, res) => {
   const session = getSession(res.locals.sessionId)
   const receiver = formatPhone(req.body.receiver)
+  const { message, button1Id, button2Id, button1Text, button2Text, url } = req.body
 
   try {
       const exists = await isExists(session, receiver)
@@ -62,31 +62,27 @@ const sendButtons = async (req, res) => {
           return response(res, 400, false, 'The receiver number does not exist.')
       }
       const buttons = [
-        {buttonId: 'id1', buttonText: {displayText: '*Yes* ✅'}, type: 1},
-        {buttonId: 'id2', buttonText: {displayText: '_No_ ❌'}, type: 1}
+        {buttonId: button1Id, buttonText: {displayText: button1Text}, type: 1},
+        {buttonId: button2Id, buttonText: {displayText: button2Text}, type: 1}
       ]
-
-      const buttonMessage = {
-          text: "*Subscribe to stories*",
-          footer: '_Footer_',
+      var buttonMessage = {
+          text: message,
           buttons: buttons,
           headerType: 1
+      }
+      if (url){
+        buttonMessage = {
+            caption: message,
+            image: {
+              url: url
+            },
+            buttons: buttons,
+            headerType: 1
+        }
       }
       //console.log(imagasend)
       await sendMessage(session, receiver, buttonMessage)
 
-      const templateButtons = [
-          {index: 1, urlButton: {displayText: '⭐ Star Baileys on GitHub!', url: 'https://github.com/adiwajshing/Baileys'}},
-          {index: 2, callButton: {displayText: 'Call me!', phoneNumber: '+91 97400 87636'}},
-          {index: 3, quickReplyButton: {displayText: 'Click to reply!', id: 'id-like-buttons-message'}},
-      ]
-
-      const templateMessage = {
-          text: "Hi it's a template message",
-          footer: 'This is the footer',
-          templateButtons: templateButtons
-      }
-      await sendMessage(session, receiver, templateMessage)
       response(res, 200, true, 'The message has been successfully sent.')
   } catch(e) {
     response(res, 500, false, 'Failed to send the message.'+e)
