@@ -111,7 +111,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     })
 
     wa.ev.on('connection.update', async (update) => {
-      console.log('connection update', update)
+        console.log('connection update', update, sessionId)
         const { connection, lastDisconnect } = update
         const statusCode = lastDisconnect?.error?.output?.statusCode
         fireWebhook(sessionId, connection)
