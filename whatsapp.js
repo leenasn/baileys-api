@@ -94,8 +94,8 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     // Automatically read incoming messages, uncomment below codes to enable this behaviour
     wa.ev.on('messages.upsert', async (m) => {
         const message = m.messages[0]
-        // console.log(`Received message ${JSON.stringify(message, undefined, 2)} sessionId ${sessionId} remoteJID ${message.key.remoteJid.endsWith("@s.whatsapp.net")} `)
         if (!message.key.fromMe && m.type === 'notify' && message.key.remoteJid.endsWith("@s.whatsapp.net")) {
+          console.log(`Notifying received message for sessionId ${sessionId} from ${message.key.remoteJid} `)
           if(messageWebhook){
               fetch(messageWebhook, {
                 method: 'POST',
