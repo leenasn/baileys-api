@@ -106,8 +106,8 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ "session": sessionId, "message": message})
-              }).catch(() => {
-                console.log("Error while sending Webhook for incoming message")
+              }).catch(error => {
+                console.log("Error while sending Webhook for incoming message "+error.inspect)
               })
           }
         }
@@ -192,8 +192,8 @@ const fireWebhook = (sessionId, connectionStatus) =>{
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ "session": sessionId, "message": connectionStatus})
-      }).catch(() => {
-        console.log("Error while calling connectionWebhook")
+      }).catch(error => {
+        console.log("Error while calling connection Webhook "+error.inspect)
       })
   }
 }
