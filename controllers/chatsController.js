@@ -65,16 +65,19 @@ const sendButtons = async (req, res) => {
           return response(res, 400, false, 'The receiver number does not exist.')
       }
       var buttons = []
-      var buttonMessage = {
-          text: message,
-          headerType: 1
-      }
+      var buttonMessage = {}
       if (url){
         buttonMessage = {
           caption: message,
           image: {
             url: url
           }
+        }
+      }
+      else{
+        buttonMessage = {
+          text: message,
+          headerType: 1
         }
       }
       if(button1Text){
@@ -93,6 +96,7 @@ const sendButtons = async (req, res) => {
 
       response(res, 200, true, 'The message has been successfully sent.')
   } catch(e) {
+    console.log(`Failed to send message with error ${e} for session ${session}`)
     response(res, 500, false, 'Failed to send the message.'+e)
   }
 }
