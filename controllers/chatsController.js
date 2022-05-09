@@ -53,7 +53,10 @@ const sendImage = async (req, res) => {
 const sendButtons = async (req, res) => {
   const session = getSession(res.locals.sessionId)
   const receiver = formatPhone(req.body.receiver)
-  const { message, button1Id, button2Id, button1Text, button2Text, url, templateButtonLabel, templateButtonURL } = req.body
+  const { message, url,
+    button1Id, button2Id, button3Id,
+    button1Text, button2Text, button3Text,
+    button1URL, button2URL, button3URL } = req.body
 
   try {
       const exists = await isExists(session, receiver)
@@ -61,6 +64,7 @@ const sendButtons = async (req, res) => {
       if (!exists) {
           return response(res, 400, false, 'The receiver number does not exist.')
       }
+      var buttons = []
       var buttonMessage = {
           text: message,
           buttons: buttons,
@@ -68,29 +72,24 @@ const sendButtons = async (req, res) => {
       }
       if (url){
         buttonMessage = {
-            caption: message,
-            image: {
-              url: url
-            },
+          caption: message,
+          image: {
+            url: url
+          }
         }
       }
-      var buttons = []
-      if(templateButtonLabel){
-        buttons = [
-          { index: 1, urlButton: { displayText: templateButtonLabel, url: templateButtonURL }},
-          { index: 2, quickReplyButton: {displayText: button1Text, id: button1Id}},
-          { index: 3, quickReplyButton: {displayText: button2Text, id: button2Id}}
-        ]
+      if(button1Text){
+        buttons.push(buttonJSON(1, button1Text, button1Id, button1URL))
+      }
+      if(button2Text){
+        buttons.push(buttonJSON(2, button2Text, button2Id, button2URL))
+      }
+      if(button3Text){
+        buttons.push(buttonJSON(3, button3Text, button3Id, button3URL))
+      }
+      if(buttons.length > 0){
         buttonMessage["templateButtons"] = buttons
       }
-      else if (button1Text){
-        buttons = [
-          {buttonId: button1Id, buttonText: {displayText: button1Text}, type: 1},
-          {buttonId: button2Id, buttonText: {displayText: button2Text}, type: 1}
-        ]
-        buttonMessage["buttons"] = buttons
-      }
-      //console.log(imagasend)
       await sendMessage(session, receiver, buttonMessage)
 
       response(res, 200, true, 'The message has been successfully sent.')
@@ -98,7 +97,14 @@ const sendButtons = async (req, res) => {
     response(res, 500, false, 'Failed to send the message.'+e)
   }
 }
-
+function buttonJSON(index, buttonText, buttonId, buttonURL){
+  if(buttonId){
+    return { index: index, quickReplyButton: {displayText: buttonText, id: buttonId}}
+  }
+  else if(buttonURL){
+    return { index: index, urlButton: { displayText: buttonText, url: buttonURL }}
+  }
+}
 const sendBulk = async (req, res) => {
     const session = getSession(res.locals.sessionId)
     const errors = []
