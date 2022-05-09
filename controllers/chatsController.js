@@ -67,7 +67,6 @@ const sendButtons = async (req, res) => {
       var buttons = []
       var buttonMessage = {
           text: message,
-          buttons: buttons,
           headerType: 1
       }
       if (url){
@@ -98,6 +97,7 @@ const sendButtons = async (req, res) => {
   }
 }
 function buttonJSON(index, buttonText, buttonId, buttonURL){
+  console.log(`index ${index} buttonText ${buttonText} buttonId ${buttonId} buttonURL ${buttonURL}`)
   if(buttonId){
     return { index: index, quickReplyButton: {displayText: buttonText, id: buttonId}}
   }
