@@ -95,9 +95,12 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     wa.ev.on('messages.upsert', async (m) => {
         const message = m.messages[0]
         // console.log(`REceived message ${JSON.stringify(message)} type ${m.type}`)
-        // if (!message.key.fromMe && m.type === 'notify' &&
-        //   message.key.remoteJid.endsWith("@s.whatsapp.net")) {
-        if (m.type === 'notify' && message.key.remoteJid.endsWith("@s.whatsapp.net")) {
+        var notify = (m.type === 'notify' && message.key.remoteJid.endsWith("@s.whatsapp.net"))
+        if(message.key.fromMe && process.env.NOTIFY_FROM_ME){
+          console.log("Notify messages from me")
+          notify = true
+        }
+        if (notify) {
           console.log(`Notifying received message for sessionId ${sessionId} from ${message.key.remoteJid} `)
           if(messageWebhook){
               fetch(messageWebhook, {
