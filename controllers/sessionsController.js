@@ -15,8 +15,8 @@ const status = (req, res) => {
         state === 'connected' && typeof (session.isLegacy ? session.state.legacy.user : session.user) !== 'undefined'
             ? 'authenticated'
             : state
-
-    response(res, 200, true, '', { status: state })
+    let userId = session.user ? session.user.id : ""
+    response(res, 200, true, '', { status: state, userId:  userId })
 }
 
 const add = (req, res) => {
