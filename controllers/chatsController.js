@@ -71,7 +71,8 @@ const sendButtons = async (req, res) => {
           caption: message,
           image: {
             url: url
-          }
+          },
+          headerType: 4
         }
       }
       else{
