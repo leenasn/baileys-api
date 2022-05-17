@@ -40,6 +40,15 @@ router.post(
     sessionValidator,
     controller.sendButtons
 )
+
+router.post(
+    '/send-normal-buttons',
+    query('id').notEmpty(),
+    body('receiver').notEmpty(),
+    requestValidator,
+    sessionValidator,
+    controller.sendNormalButtons
+)
 router.post('/send-bulk', query('id').notEmpty(), requestValidator, sessionValidator, controller.sendBulk)
 
 export default router

@@ -50,6 +50,52 @@ const sendImage = async (req, res) => {
   }
 }
 
+const sendNormalButtons = async (req, res) => {
+  const session = getSession(res.locals.sessionId)
+  const receiver = formatPhone(req.body.receiver)
+  const { message, url,
+    button1Id, button2Id,
+    button1Text, button2Text } = req.body
+
+  try {
+      const exists = await isExists(session, receiver)
+
+      if (!exists) {
+          return response(res, 400, false, 'The receiver number does not exist.')
+      }
+      let buttonMessage = {}
+      // send a buttons message!
+      const buttons = [
+        {buttonId: button1Id, buttonText: {displayText: button1Text}, type: 1},
+        {buttonId: button2Id, buttonText: {displayText: button2Text}, type: 1}
+      ]
+      if (url){
+        buttonMessage = {
+          caption: message,
+          image: {
+            url: url
+          },
+          buttons: buttons,
+          headerType: 4
+        }
+      }
+      else{
+        buttonMessage = {
+          text: message,
+          buttons: buttons,
+          headerType: 1
+        }
+      }
+
+      await sendMessage(session, receiver, buttonMessage)
+
+      response(res, 200, true, 'The message has been successfully sent.')
+  } catch(e) {
+    console.log(`Failed to send message with error ${e} for session ${session}`)
+    response(res, 500, false, 'Failed to send the message.'+e)
+  }
+}
+
 const sendButtons = async (req, res) => {
   const session = getSession(res.locals.sessionId)
   const receiver = formatPhone(req.body.receiver)
@@ -71,14 +117,12 @@ const sendButtons = async (req, res) => {
           caption: message,
           image: {
             url: url
-          },
-          headerType: 4
+          }
         }
       }
       else{
         buttonMessage = {
-          text: message,
-          headerType: 1
+          text: message
         }
       }
       if(button1Text){
@@ -101,6 +145,7 @@ const sendButtons = async (req, res) => {
     response(res, 500, false, 'Failed to send the message.'+e)
   }
 }
+
 function buttonJSON(index, buttonText, buttonId, buttonURL){
   console.log(`index ${index} buttonText ${buttonText} buttonId ${buttonId} buttonURL ${buttonURL}`)
   if(buttonId){
@@ -153,4 +198,4 @@ const sendBulk = async (req, res) => {
     )
 }
 
-export { getList, send, sendBulk, sendImage, sendButtons }
+export { getList, send, sendBulk, sendImage, sendButtons, sendNormalButtons }
