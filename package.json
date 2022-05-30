@@ -20,7 +20,7 @@
     "node": ">=14.5.0"
   },
   "dependencies": {
-    "@adiwajshing/baileys": "leenasn/baileys",
+    "@adiwajshing/baileys": "github:leenasn/Baileys",
     "@adiwajshing/keyed-db": "^0.2.4",
     "dotenv": "^16.0.0",
     "express": "^4.17.2",
