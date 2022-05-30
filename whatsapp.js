@@ -102,17 +102,17 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
         }
         if (notify) {
           console.log(`Notifying received message for sessionId ${sessionId} from ${message.key.remoteJid} `)
-          if(messageWebhook){
-              fetch(messageWebhook, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ "session": sessionId, "message": message})
-              }).catch(error => {
-                console.log("Error while sending Webhook for incoming message "+error.inspect)
-              })
-          }
+          // if(messageWebhook){
+          //     fetch(messageWebhook, {
+          //       method: 'POST',
+          //       headers: {
+          //         'Content-Type': 'application/json'
+          //       },
+          //       body: JSON.stringify({ "session": sessionId, "message": message})
+          //     }).catch(error => {
+          //       console.log("Error while sending Webhook for incoming message "+error.inspect)
+          //     })
+          // }
         }
     })
 
@@ -188,17 +188,17 @@ const deleteSession = (sessionId, isLegacy = false) => {
 }
 
 const fireWebhook = (sessionId, connectionStatus) =>{
-  if(connectionWebhook && connectionStatus){
-      fetch(connectionWebhook, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ "session": sessionId, "message": connectionStatus})
-      }).catch(error => {
-        console.log("Error while calling connection Webhook "+error.inspect)
-      })
-  }
+  // if(connectionWebhook && connectionStatus){
+  //     fetch(connectionWebhook, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json'
+  //       },
+  //       body: JSON.stringify({ "session": sessionId, "message": connectionStatus})
+  //     }).catch(error => {
+  //       console.log("Error while calling connection Webhook "+error.inspect)
+  //     })
+  // }
 }
 const getChatList = (sessionId, isGroup = false) => {
     const filter = isGroup ? '@g.us' : '@s.whatsapp.net'
