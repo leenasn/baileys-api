@@ -9,8 +9,8 @@ const app = express()
 const host = process.env.HOST ?? '127.0.0.1'
 const port = parseInt(process.env.PORT ?? 8000)
 
-app.get('/check',function(req,res) {
-  res.sendFile(`${__dirname}/index.html`);
+app.get('/qr',function(req,res) {
+  res.sendFile(`${__dirname}/qr.html`);
 });
 
 app.use(express.urlencoded({ extended: true }))

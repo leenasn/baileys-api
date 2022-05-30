@@ -20,13 +20,13 @@ const status = (req, res) => {
 }
 
 const add = (req, res) => {
-    const { id, isLegacy } = req.body
-
+    // const { id, isLegacy } = req.body
+    const id = new Date().getTime().toString()
     if (isSessionExists(id)) {
         return response(res, 409, false, 'Session already exists, please use another id.')
     }
 
-    createSession(id, isLegacy === 'true', res)
+    createSession(id, false, res)
 }
 
 const del = async (req, res) => {

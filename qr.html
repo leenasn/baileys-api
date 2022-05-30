@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <title>Bailey QR Code</title>
+  <script type="module">
+      import { Application, Controller } from "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js"
+      window.Stimulus = Application.start()
+
+      Stimulus.register("qrcode", class extends Controller {
+        static targets = ["img"]
+        connect() {
+          console.log("Inside QR code")
+          fetch("sessions/add", {
+            credentials: "same-origin",
+            method: "POST",
+          })
+          .then(response => {
+            if (response.ok) {
+              return response.json()
+            }
+          })
+          .then(json => {
+            var jsonResponse = JSON.stringify(json)
+            // console.log(`JSON ${jsonResponse}`)
+            console.log(`JSON ${JSON.parse(jsonResponse)["data"]["qr"]}`)
+            if(json != undefined){
+              this.imgTarget.src = JSON.parse(jsonResponse)["data"]["qr"]
+            }
+          })
+
+        }
+      })
+    </script>
+  </head>
+<body>
+
+<p data-controller="qrcode">
+  <img data-qrcode-target="img" width="50%"></img>
+</p>
+</body>
+</html>

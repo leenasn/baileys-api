@@ -14,14 +14,14 @@ function customAuthorizer(username, password) {
   return userMatches & passwordMatches
 }
 
-router.use(
-  basicAuth({
-    authorizer: customAuthorizer,
-    challenge: true,
-    realm: 'PN-WhatsApp',
-    unauthorizedResponse: "Invalid credentials"
-  })
-)
+// router.use(
+//   basicAuth({
+//     authorizer: customAuthorizer,
+//     challenge: true,
+//     realm: 'PN-WhatsApp',
+//     unauthorizedResponse: "Invalid credentials"
+//   })
+// )
 
 router.use('/sessions', sessionsRoute)
 router.use('/chats', chatsRoute)
