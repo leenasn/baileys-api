@@ -101,7 +101,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
           notify = true
         }
         if (notify) {
-          console.log(`Notifying received message for sessionId ${sessionId} from ${message.key.remoteJid} `)
+          console.log(`Notifying received message for sessionId ${sessionId} from ${message.key.remoteJid} message ${JSON.stringify(message)}`)
           // if(messageWebhook){
           //     fetch(messageWebhook, {
           //       method: 'POST',
