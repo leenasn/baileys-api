@@ -125,6 +125,8 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
 
         if (connection === 'open') {
             retries.delete(sessionId)
+            await delay(10000)
+            wa.sendPresenceUpdate('unavailable')
         }
 
         if (connection === 'close') {
