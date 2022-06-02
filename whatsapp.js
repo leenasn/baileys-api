@@ -69,6 +69,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
         printQRInTerminal: true,
         logger,
         browser: Browsers.ubuntu('Chrome'),
+        markOnlineOnConnect: false
     }
 
     /**
