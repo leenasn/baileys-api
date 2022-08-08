@@ -54,8 +54,9 @@ const sendNormalButtons = async (req, res) => {
   const session = getSession(res.locals.sessionId)
   const receiver = formatPhone(req.body.receiver)
   const { message, url,
-    button1Id, button2Id,
-    button1Text, button2Text } = req.body
+    button1Id, button2Id, button3Id,
+    button1Text, button2Text,button3Text
+  } = req.body
 
   try {
       const exists = await isExists(session, receiver)
@@ -65,10 +66,13 @@ const sendNormalButtons = async (req, res) => {
       }
       let buttonMessage = {}
       // send a buttons message!
-      const buttons = [
+      let buttons = [
         {buttonId: button1Id, buttonText: {displayText: button1Text}, type: 1},
         {buttonId: button2Id, buttonText: {displayText: button2Text}, type: 1}
       ]
+      if (button3Id){
+        buttons.push({buttonId: button3Id, buttonText: {displayText: button3Text}, type: 1})
+      }
       if (url){
         buttonMessage = {
           caption: message,
