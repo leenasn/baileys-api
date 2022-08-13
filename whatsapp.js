@@ -56,115 +56,119 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
 
     const logger = pino({ level: 'warn' })
     const store = makeInMemoryStore({ logger })
+    try{
+      const { state, saveState } = isLegacy
+          ? useSingleFileLegacyAuthState(sessionsDir(sessionFile))
+          : useSingleFileAuthState(sessionsDir(sessionFile))
 
-    const { state, saveState } = isLegacy
-        ? useSingleFileLegacyAuthState(sessionsDir(sessionFile))
-        : useSingleFileAuthState(sessionsDir(sessionFile))
+      /**
+       * @type {import('@adiwajshing/baileys').CommonSocketConfig}
+       */
+      const waConfig = {
+          auth: state,
+          printQRInTerminal: true,
+          logger,
+          browser: Browsers.ubuntu('Chrome'),
+          markOnlineOnConnect: false
+      }
 
-    /**
-     * @type {import('@adiwajshing/baileys').CommonSocketConfig}
-     */
-    const waConfig = {
-        auth: state,
-        printQRInTerminal: true,
-        logger,
-        browser: Browsers.ubuntu('Chrome'),
-        markOnlineOnConnect: false
-    }
+      /**
+       * @type {import('@adiwajshing/baileys').AnyWASocket}
+       */
+      const wa = isLegacy ? makeWALegacySocket(waConfig) : makeWASocket.default(waConfig)
 
-    /**
-     * @type {import('@adiwajshing/baileys').AnyWASocket}
-     */
-    const wa = isLegacy ? makeWALegacySocket(waConfig) : makeWASocket.default(waConfig)
+      if (!isLegacy) {
+          store.readFromFile(sessionsDir(`${sessionId}_store`))
+          store.bind(wa.ev)
+      }
 
-    if (!isLegacy) {
-        store.readFromFile(sessionsDir(`${sessionId}_store`))
-        store.bind(wa.ev)
-    }
+      sessions.set(sessionId, { ...wa, store, isLegacy })
 
-    sessions.set(sessionId, { ...wa, store, isLegacy })
+      wa.ev.on('creds.update', saveState)
 
-    wa.ev.on('creds.update', saveState)
-
-    wa.ev.on('chats.set', ({ chats }) => {
-        if (isLegacy) {
-            store.chats.insertIfAbsent(...chats)
-        }
-    })
-
-    // Automatically read incoming messages, uncomment below codes to enable this behaviour
-    wa.ev.on('messages.upsert', async (m) => {
-        const message = m.messages[0]
-        // console.log(`REceived message ${JSON.stringify(message)} type ${m.type}`)
-        var notify = (m.type === 'notify' && message.key.remoteJid.endsWith("@s.whatsapp.net"))
-        if(message.key.fromMe && process.env.NOTIFY_FROM_ME){
-          console.log("Notify messages from me")
-          notify = true
-        }
-        if (notify) {
-          console.log(`Notifying received message for sessionId ${sessionId} from ${message.key.remoteJid} `)
-          if(messageWebhook){
-              fetch(messageWebhook, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ "session": sessionId, "message": message})
-              }).catch(error => {
-                console.log("Error while sending Webhook for incoming message "+error.inspect)
-              })
+      wa.ev.on('chats.set', ({ chats }) => {
+          if (isLegacy) {
+              store.chats.insertIfAbsent(...chats)
           }
-        }
-    })
+      })
 
-    wa.ev.on('connection.update', async (update) => {
-        console.log('connection update', update, sessionId)
-        const { connection, lastDisconnect } = update
-        const statusCode = lastDisconnect?.error?.output?.statusCode
-        fireWebhook(sessionId, connection)
-
-        if (connection === 'open') {
-            retries.delete(sessionId)
-            await delay(10000)
-            wa.sendPresenceUpdate('unavailable')
-        }
-
-        if (connection === 'close') {
-            if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId)) {
-                if (res && !res.headersSent) {
-                    response(res, 500, false, 'Unable to create session.')
-                }
-                return deleteSession(sessionId, isLegacy)
+      // Automatically read incoming messages, uncomment below codes to enable this behaviour
+      wa.ev.on('messages.upsert', async (m) => {
+          const message = m.messages[0]
+          // console.log(`REceived message ${JSON.stringify(message)} type ${m.type}`)
+          var notify = (m.type === 'notify' && message.key.remoteJid.endsWith("@s.whatsapp.net"))
+          if(message.key.fromMe && process.env.NOTIFY_FROM_ME){
+            console.log("Notify messages from me")
+            notify = true
+          }
+          if (notify) {
+            console.log(`Notifying received message for sessionId ${sessionId} from ${message.key.remoteJid} `)
+            if(messageWebhook){
+                fetch(messageWebhook, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ "session": sessionId, "message": message})
+                }).catch(error => {
+                  console.log("Error while sending Webhook for incoming message "+error.inspect)
+                })
             }
+          }
+      })
 
-            setTimeout(
-                () => {
-                    createSession(sessionId, isLegacy, res)
-                },
-                statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
-            )
-        }
-        if (update.qr) {
-            if (res && !res.headersSent) {
-                try {
-                    const qr = await toDataURL(update.qr)
+      wa.ev.on('connection.update', async (update) => {
+          console.log('connection update', update, sessionId)
+          const { connection, lastDisconnect } = update
+          const statusCode = lastDisconnect?.error?.output?.statusCode
+          fireWebhook(sessionId, connection)
 
-                    response(res, 200, true, 'QR code received, please scan the QR code.', { qr })
+          if (connection === 'open') {
+              retries.delete(sessionId)
+              await delay(10000)
+              wa.sendPresenceUpdate('unavailable')
+          }
 
-                    return
-                } catch {
-                    response(res, 500, false, 'Unable to create QR code.')
-                }
-            }
+          if (connection === 'close') {
+              if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId)) {
+                  if (res && !res.headersSent) {
+                      response(res, 500, false, 'Unable to create session.')
+                  }
+                  return deleteSession(sessionId, isLegacy)
+              }
 
-            try {
-                await wa.logout()
-            } catch {
-            } finally {
-                deleteSession(sessionId, isLegacy)
-            }
-        }
-    })
+              setTimeout(
+                  () => {
+                      createSession(sessionId, isLegacy, res)
+                  },
+                  statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
+              )
+          }
+          if (update.qr) {
+              if (res && !res.headersSent) {
+                  try {
+                      const qr = await toDataURL(update.qr)
+
+                      response(res, 200, true, 'QR code received, please scan the QR code.', { qr })
+
+                      return
+                  } catch {
+                      response(res, 500, false, 'Unable to create QR code.')
+                  }
+              }
+
+              try {
+                  await wa.logout()
+              } catch {
+              } finally {
+                  deleteSession(sessionId, isLegacy)
+              }
+          }
+      })
+    }
+    catch {
+      console.log("Error in CreateSession for sessionId "+sessionId)
+    }
 }
 
 /**
