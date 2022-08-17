@@ -22,7 +22,7 @@ const dirname = process.env.SESSIONS_DIR ?? __dirname
 const messageWebhook = process.env.MESSAGE_WEBHOOK_URL ?? null
 const connectionWebhook = process.env.CONNECTION_WEBHOOK_URL ?? null
 const sessionsDir = (sessionId = '') => {
-    return join(dirname, 'sessions', sessionId ? `${sessionId}.json` : '')
+    return join(dirname, 'backups', sessionId ? `${sessionId}.json` : '')
 }
 
 const isSessionExists = (sessionId) => {
